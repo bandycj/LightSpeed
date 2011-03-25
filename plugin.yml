@@ -1,0 +1,5 @@
+name: LightSpeed
+
+main: org.selurgniman.bukkit.lightspeed.LightSpeed
+
+version: 0.1
