@@ -35,7 +35,7 @@ public class LightSpeed extends JavaPlugin {
 	private Configuration config=null;
     public PermissionHandler Permissions=null;
 	private Double speed=4d;
-	private Material railMaterial=Material.COBBLESTONE;
+	private Material railMaterial=Material.STONE;
 	private Material pathMaterial=Material.GLASS;
 	
     @Override
@@ -82,30 +82,35 @@ public class LightSpeed extends JavaPlugin {
 			Location toLocation=event.getTo();
 			World world=toLocation.getWorld();
 			Player player=event.getPlayer();
-			Block toBlock=world.getBlockAt(toLocation);
-			if (toBlock.getType() == pathMaterial){
-				log.info("player on glass");
-				if ((toBlock.getFace(BlockFace.NORTH).getType() == railMaterial 
-						&& toBlock.getFace(BlockFace.SOUTH).getType() == railMaterial) || 
-						(toBlock.getFace(BlockFace.EAST).getType() == railMaterial 
-						&& toBlock.getFace(BlockFace.WEST).getType() == railMaterial)){
-
-					log.info("player on path");
-					// Courtesy of Raphfrk from the bukkit forums.
-					Location loc = player.getLocation();
-					Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
-					Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
-					velocity.multiply(speed/velocity.length());
-					player.setVelocity(velocity);
+			if (world.getBlockAt(toLocation).getType() == Material.AIR){
+				Block toPathBlock=world.getBlockAt(toLocation).getFace(BlockFace.DOWN);
+				if (toPathBlock.getType() == pathMaterial && player.getVelocity().length() <= 1d) {
+					if ((toPathBlock.getFace(BlockFace.NORTH).getType() == railMaterial 
+							&& toPathBlock.getFace(BlockFace.SOUTH).getType() == railMaterial) || 
+							(toPathBlock.getFace(BlockFace.EAST).getType() == railMaterial 
+							&& toPathBlock.getFace(BlockFace.WEST).getType() == railMaterial)){
+							// Courtesy of Raphfrk from the bukkit forums.
+							if (toPathBlock.getFace(BlockFace.DOWN, 2).isBlockPowered()){
+								Location loc = event.getFrom();
+								Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
+								Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
+								velocity.multiply(speed);
+								player.setVelocity(velocity);
+							}
+					}
 				}
-			} else if (toBlock.getType() != pathMaterial && world.getBlockAt(event.getFrom()).getType() == pathMaterial){
-				// Courtesy of Raphfrk from the bukkit forums.
-				Location loc = player.getLocation();
-				Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
-				Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
-				velocity.multiply(speed*velocity.length());
-				player.setVelocity(velocity);				 
-			}
+				if (player.getVelocity().length()>1d && toPathBlock.getType() != pathMaterial){
+					setRegularVelocity(player,toLocation);
+				}
+			} 
+		}
+		private void setRegularVelocity(Player player, Location toLocation){
+			// Courtesy of Raphfrk from the bukkit forums.
+			Location loc = player.getLocation();
+			Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
+			Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
+			velocity.multiply(speed/velocity.length());
+			player.setVelocity(velocity);	
 		}
 	}
 }
