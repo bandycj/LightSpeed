@@ -29,6 +29,7 @@ public class LightSpeed extends JavaPlugin {
 	private Double speed=3d;
 	private Material railMaterial=Material.SANDSTONE;
 	private Material pathMaterial=Material.GLASS;
+	private Material trackMaterial=Material.IRON_BLOCK;
 	
     @Override
 	public void onDisable() {
@@ -53,14 +54,18 @@ public class LightSpeed extends JavaPlugin {
 			Location toLocation=event.getTo();
 			Player player=event.getPlayer();
 			Block toBlock=toLocation.getBlock();
-			if (toBlock.getType() == Material.AIR){
+			if (toBlock.getType() == Material.AIR || toBlock.getType() == Material.IRON_BLOCK || toBlock.getType() == Material.TORCH){
 				Block toPathBlock=toBlock.getFace(BlockFace.DOWN);
-				if (toPathBlock.getType() == pathMaterial && player.getVelocity().length() <= 1d) {
+				if (player.isInsideVehicle()){
+					toPathBlock=toBlock;
+				}
+				Boolean accelerate=false;
+				if ((toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial) && player.getVelocity().length() <= 1d) {
 					BlockFace startBlockFace=null;
 					BlockFace oppositeBlockFace=null;
 					if (toPathBlock.getFace(BlockFace.NORTH).getType() == railMaterial && toPathBlock.getFace(BlockFace.SOUTH).getType() == railMaterial){
 						startBlockFace=BlockFace.NORTH;
-						oppositeBlockFace=BlockFace.NORTH;
+						oppositeBlockFace=BlockFace.SOUTH;
 					} else if (toPathBlock.getFace(BlockFace.EAST).getType() == railMaterial && toPathBlock.getFace(BlockFace.WEST).getType() == railMaterial){
 						startBlockFace=BlockFace.EAST;
 						oppositeBlockFace=BlockFace.WEST;
@@ -75,35 +80,49 @@ public class LightSpeed extends JavaPlugin {
 						path[5]=path[4].getFace(BlockFace.UP);
 						path[6]=path[5].getFace(BlockFace.UP);
 						
-						for (Block block:path){
-							if (block.getType() != railMaterial){
-//								block.setType(railMaterial);
-								break;
-							} else {
-								if (toPathBlock.getFace(BlockFace.DOWN, 2).isBlockPowered()){
-									// Courtesy of Raphfrk from the bukkit forums.
-									Location loc = event.getFrom();
-									Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
-									Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
-									velocity.multiply(speed);
-									player.setVelocity(velocity);
-								}
-							}
+						accelerate = (traceShape(path)==path.length);
+					}
+				}
+				
+				// Courtesy of Raphfrk from the bukkit forums.
+				Location loc = event.getFrom();
+				Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
+				Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
+				
+				if (accelerate){
+					if (toPathBlock.getFace(BlockFace.DOWN, 2).isBlockPowered()){
+						velocity.multiply(speed);
+						if (player.isInsideVehicle()){
+							velocity.multiply(speed);
+							player.getVehicle().setVelocity(velocity);
+						} else {
+							player.setVelocity(velocity);
 						}
 					}
 				}
-				if (player.getVelocity().length()>1d && toPathBlock.getType() != pathMaterial){
-					// Courtesy of Raphfrk from the bukkit forums.
-					Location loc = player.getLocation();
-					Vector target = new Vector(toLocation.getX(), toLocation.getY(), toLocation.getZ());
-					Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
+				if (player.getVelocity().length()>1d && (toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial)){
 					velocity.multiply(speed/velocity.length());
-					player.setVelocity(velocity);
+					if (player.isInsideVehicle()){
+						velocity.multiply(speed/velocity.length());
+						player.getVehicle().setVelocity(velocity);
+					} else {
+						player.setVelocity(velocity);
+					}
 				}
 			}
+			
 			toBlock=null;
 			player=null;
 			toLocation=null;
+		}
+		
+		private int traceShape(Block[] path){
+			for (int i=0;i<path.length;i++){
+				if (path[i].getType() != railMaterial){
+					return 0;
+				}
+			}
+			return path.length;
 		}
 	}
 }
