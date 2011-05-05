@@ -54,11 +54,14 @@ public class LightSpeed extends JavaPlugin {
 			Location toLocation=event.getTo();
 			Player player=event.getPlayer();
 			Block toBlock=toLocation.getBlock();
+			
+			
 			if (toBlock.getType() == Material.AIR || toBlock.getType() == Material.IRON_BLOCK || toBlock.getType() == Material.TORCH){
 				Block toPathBlock=toBlock.getFace(BlockFace.DOWN);
-				if (player.isInsideVehicle()){
+				if (player.isInsideVehicle() || playerRising(event)){
 					toPathBlock=toBlock;
 				}
+				
 				Boolean accelerate=false;
 				if ((toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial) && player.getVelocity().length() <= 1d) {
 					BlockFace startBlockFace=null;
@@ -80,9 +83,19 @@ public class LightSpeed extends JavaPlugin {
 						path[5]=path[4].getFace(BlockFace.UP);
 						path[6]=path[5].getFace(BlockFace.UP);
 						
-						accelerate = (traceShape(path)==path.length);
+						if (toPathBlock.getFace(BlockFace.DOWN, 2).isBlockPowered()){
+							accelerate = (traceShape(path)==path.length);
+						}
+					}
+				} else if (playerRising(event) && toPathBlock.getType() == Material.AIR && player.getVelocity().length() <= speed){
+					if (toPathBlock.getFace(BlockFace.NORTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.NORTH, 2).isBlockPowered() && 
+							toPathBlock.getFace(BlockFace.SOUTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.SOUTH, 2).isBlockPowered() &&
+							toPathBlock.getFace(BlockFace.EAST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.EAST, 2).isBlockPowered() &&
+							toPathBlock.getFace(BlockFace.WEST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.WEST, 2).isBlockPowered()){
+						accelerate=true;
 					}
 				}
+				
 				
 				// Courtesy of Raphfrk from the bukkit forums.
 				Location loc = event.getFrom();
@@ -90,17 +103,15 @@ public class LightSpeed extends JavaPlugin {
 				Vector velocity = target.clone().subtract(new Vector(loc.getX(), loc.getY(), loc.getZ()));
 				
 				if (accelerate){
-					if (toPathBlock.getFace(BlockFace.DOWN, 2).isBlockPowered()){
+					velocity.multiply(speed);
+					if (player.isInsideVehicle()){
 						velocity.multiply(speed);
-						if (player.isInsideVehicle()){
-							velocity.multiply(speed);
-							player.getVehicle().setVelocity(velocity);
-						} else {
-							player.setVelocity(velocity);
-						}
+						player.getVehicle().setVelocity(velocity);
+					} else {
+						player.setVelocity(velocity);
 					}
 				}
-				if (player.getVelocity().length()>1d && (toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial)){
+				if (player.getVelocity().length()>1d && (toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial) && (!playerRising(event)||!playerFalling(event))){
 					velocity.multiply(speed/velocity.length());
 					if (player.isInsideVehicle()){
 						velocity.multiply(speed/velocity.length());
@@ -123,6 +134,20 @@ public class LightSpeed extends JavaPlugin {
 				}
 			}
 			return path.length;
+		}
+		
+		private boolean playerFalling(PlayerMoveEvent event){
+			if (event.getTo().getBlockY()<event.getFrom().getBlockY()){
+				return true;
+			}
+			return false;
+		}
+		
+		private boolean playerRising(PlayerMoveEvent event){
+			 if (event.getTo().getBlockY()>event.getFrom().getBlockY()){
+					return true;
+			 }
+			 return false;
 		}
 	}
 }
