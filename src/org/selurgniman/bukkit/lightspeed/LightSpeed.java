@@ -88,10 +88,10 @@ public class LightSpeed extends JavaPlugin {
 						}
 					}
 				} else if (playerRising(event) && toPathBlock.getType() == Material.AIR && player.getVelocity().length() <= speed){
-					if (toPathBlock.getFace(BlockFace.NORTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.NORTH, 2).isBlockPowered() && 
-							toPathBlock.getFace(BlockFace.SOUTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.SOUTH, 2).isBlockPowered() &&
-							toPathBlock.getFace(BlockFace.EAST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.EAST, 2).isBlockPowered() &&
-							toPathBlock.getFace(BlockFace.WEST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.WEST, 2).isBlockPowered()){
+					if ((toPathBlock.getFace(BlockFace.NORTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.NORTH, 2).getType() == Material.REDSTONE_TORCH_ON) || 
+							(toPathBlock.getFace(BlockFace.SOUTH).getType() == pathMaterial && toPathBlock.getFace(BlockFace.SOUTH, 2).getType() == Material.REDSTONE_TORCH_ON) ||
+							(toPathBlock.getFace(BlockFace.EAST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.EAST, 2).getType() == Material.REDSTONE_TORCH_ON) ||
+							(toPathBlock.getFace(BlockFace.WEST).getType() == pathMaterial && toPathBlock.getFace(BlockFace.WEST, 2).getType() == Material.REDSTONE_TORCH_ON)){
 						accelerate=true;
 					}
 				}
@@ -111,7 +111,7 @@ public class LightSpeed extends JavaPlugin {
 						player.setVelocity(velocity);
 					}
 				}
-				if (player.getVelocity().length()>1d && (toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial) && (!playerRising(event)||!playerFalling(event))){
+				if (player.getVelocity().length()>1d && (toPathBlock.getType() == pathMaterial || toPathBlock.getType() == trackMaterial) && (!playerRising(event)&&!playerFalling(event))){
 					velocity.multiply(speed/velocity.length());
 					if (player.isInsideVehicle()){
 						velocity.multiply(speed/velocity.length());
